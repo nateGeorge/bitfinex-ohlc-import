@@ -47,6 +47,6 @@ class SqliteDatabase:
                              (symbol,))
         result = r.fetchone()[0]
         if result is None:
-            return
+            return None
         else:
-            return pendulum.from_timestamp(int(result)/1000)
+            return int(result)
