@@ -1,21 +1,17 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
 requests = "*"
-pendulum = "*"
+pendulum = "~=2.0.5"
 click = "*"
 simplejson = "*"
 websockets = "*"
-
+pandas = "*"
 
 [dev-packages]
-
 ipdb = "*"
 pytest = "*"
 mock = "*"
