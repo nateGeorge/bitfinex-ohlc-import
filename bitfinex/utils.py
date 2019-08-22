@@ -44,7 +44,7 @@ def date_range(start, end, step):
     """
     curr = start
     while curr < end:
-        next_ = curr+step
+        next_ = curr + step
         # next step is bigger than end date
         # yield last (shorter) step until final date
         if next_ > end:
