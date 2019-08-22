@@ -94,8 +94,29 @@ The data will be in a file called `data.csv`.
 
 ## Testing
 
-You need to have development dependencies installed (`pipenv install --dev`). 
+You need to have development dependencies installed (`pipenv install --dev`).
 
 The tests are stored in the `tests` directory and can be run with py.test:
 
     $ pipenv run py.test tests/
+
+
+## Pipenv
+To upgrade all packages in pipenv do:
+`pipenv update --outdated`
+
+To install another package:
+`pipenv install <packagename>`
+
+To upgrade a package:
+`pipenv upgrade <packagename>`
+
+
+## Debugging
+The best way to debug is to activate the pipenv environment:
+`pipenv shell`
+The run in ipython and set the debug statement on the line you want:
+`ipython -i bitfinex/main.py`
+Set this line where you want it to stop:
+`import ipdb; ipdb.set_trace()`
+Then use 'continue' to move on, or other python commands as needed.
