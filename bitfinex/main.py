@@ -48,7 +48,7 @@ def get_symbols():
 
 
 
-def get_candles(symbol, start_date, end_date, timeframe='5m', limit=1000, get_earliest=False):
+def get_candles(symbol, start_date, end_date, timeframe='5m', limit=5000, get_earliest=False):
     """
     Return symbol candles between two dates.
     https://docs.bitfinex.com/v2/reference#rest-public-candles
@@ -96,10 +96,11 @@ def main(db_path, debug):
             logging.info(f'{i}/{len(symbols)} | {symbol} | Processing from {pd.to_datetime(start_date, unit="ms", utc=True)}')
 
         while True:
-            # add 5000 minutes in ms to the start date.
+            # add 50000 minutes in ms to the start date.
             # bitfinex is supposed to return 5000 datapoints but always returns fewer
             # probably due to not all bars having trades
-            end_date = start_date + 1000 * 5 * 60 * 1000
+            # multiply by 10 to get max number of trades
+            end_date = start_date + 1000 * 5 * 60 * 1000 * 10
             logging.debug(f'{start_date} -> {end_date}')
             # returns (max) 1000 candles, one for every minute
             if get_earliest:
@@ -127,7 +128,7 @@ def main(db_path, debug):
                 break
 
             # prevent from api rate-limiting -- 60 per minute claimed, but seems to be a little slower
-            time.sleep(2)
+            time.sleep(3)
 
     db.close()
 
