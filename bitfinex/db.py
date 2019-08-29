@@ -3,8 +3,9 @@ import pendulum
 
 
 class SqliteDatabase:
-    def __init__(self, path):
+    def __init__(self, path, candle_size):
         self.path = path
+        self.candle_size = candle_size
         self.con = sqlite3.connect(path)
         self.create()
 
@@ -13,7 +14,7 @@ class SqliteDatabase:
 
     def create(self):
         self.con.execute("""
-            CREATE TABLE IF NOT EXISTS candles (
+            CREATE TABLE IF NOT EXISTS candles_{} (
                 symbol TEXT NOT NULL,
                 time TEXT NOT NULL,
                 open TEXT NOT NULL,
@@ -23,7 +24,7 @@ class SqliteDatabase:
                 volume TEXT NOT NULL,
                 PRIMARY KEY (symbol, time)
             );
-        """)
+        """.format(self.candle_size))
 
     def insert_candles(self, symbol, candles):
         def candle_generator():
@@ -34,16 +35,16 @@ class SqliteDatabase:
 
         with self.con:
             self.con.executemany("""
-                INSERT OR IGNORE INTO candles(
+                INSERT OR IGNORE INTO candles_{}(
                     symbol, time, open, close, high, low, volume)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, candle_generator())
+                """.format(self.candle_size), candle_generator())
 
     def get_latest_candle_date(self, symbol):
         """
         Get the time of the most recent candle for a symbol
         """
-        r = self.con.execute('select max(time) from candles where symbol=?',
+        r = self.con.execute('select max(time) from candles_{} where symbol=?'.format(self.candle_size),
                              (symbol,))
         result = r.fetchone()[0]
         if result is None:
