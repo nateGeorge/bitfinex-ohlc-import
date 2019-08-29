@@ -71,11 +71,11 @@ def get_candles(symbol, start_date, end_date, timeframe='5m', limit=5000, get_ea
 @click.argument('db_path', default='bitfinex.sqlite3',
                 type=click.Path(resolve_path=True))
 @click.option('--debug', is_flag=True, help='Set debug mode')
-def main(db_path, debug):
+def main(db_path, debug, candle_size='5m'):
     if debug:
         logger.setLevel(logging.DEBUG)
 
-    db = SqliteDatabase(path=db_path)
+    db = SqliteDatabase(path=db_path, candle_size=candle_size)
 
     symbols = get_symbols()
     logging.info(f'Found {len(symbols)} symbols')
@@ -101,13 +101,18 @@ def main(db_path, debug):
             # probably due to not all bars having trades
             # multiply by 10 to get max number of trades
             end_date = start_date + 1000 * 5 * 60 * 1000 * 10
+            now = int(pd.Timestamp.utcnow().timestamp() * 1000)
+            # request won't work with an end date after the current time
+            if end_date > now:
+                end_date = now
+
             logging.debug(f'{start_date} -> {end_date}')
             # returns (max) 1000 candles, one for every minute
             if get_earliest:
-                candles = get_candles(symbol, start_date, end_date, get_earliest=True)
+                candles = get_candles(symbol, start_date, end_date, get_earliest=True, timeframe=candle_size)
                 get_earliest = False
             else:
-                candles = get_candles(symbol, start_date, end_date)
+                candles = get_candles(symbol, start_date, end_date, timeframe=candle_size)
 
             # df = pd.DataFrame(candles)
             # time_diffs = df[0].astype('int').diff().value_counts()
@@ -119,16 +124,18 @@ def main(db_path, debug):
             last_start_date = start_date
             start_date = candles[0][0]
 
+            if start_date == last_start_date:
+                logging.debug('Reached latest data, ending')
+                break
+
             # seems like this modifies the original 'candles' to insert the ticker
             logging.debug(f'Fetched {len(candles)} candles')
             if candles:
                 db.insert_candles(symbol, candles)
 
-            if start_date == last_start_date:
-                break
 
             # prevent from api rate-limiting -- 60 per minute claimed, but seems to be a little slower
-            time.sleep(3)
+            time.sleep(2)
 
     db.close()
 
