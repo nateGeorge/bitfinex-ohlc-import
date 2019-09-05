@@ -48,19 +48,19 @@ def get_symbols():
 
 
 
-def get_candles(symbol, start_date, end_date, timeframe='5m', limit=5000, get_earliest=False):
+def get_candles(symbol, start_date, end_date, candle_size='5m', limit=5000, get_earliest=False):
     """
     Return symbol candles between two dates.
     https://docs.bitfinex.com/v2/reference#rest-public-candles
     """
     if get_earliest:
-        url = f'{API_URL}/candles/trade:{timeframe}:t{symbol.upper()}/hist' \
+        url = f'{API_URL}/candles/trade:{candle_size}:t{symbol.upper()}/hist' \
               f'?start={start_date}&end={end_date}&limit={limit}&sort=1'
         data = get_data(url)
         # reverse data
         data = data[::-1]
     else:
-        url = f'{API_URL}/candles/trade:{timeframe}:t{symbol.upper()}/hist' \
+        url = f'{API_URL}/candles/trade:{candle_size}:t{symbol.upper()}/hist' \
               f'?start={start_date}&end={end_date}&limit={limit}'
         data = get_data(url)
 
@@ -70,8 +70,11 @@ def get_candles(symbol, start_date, end_date, timeframe='5m', limit=5000, get_ea
 @click.command()
 @click.argument('db_path', default='bitfinex.sqlite3',
                 type=click.Path(resolve_path=True))
+# candle size should be in minutes
+@click.argument('candle_size', default='5m')
 @click.option('--debug', is_flag=True, help='Set debug mode')
-def main(db_path, debug, candle_size='5m'):
+def main(db_path, candle_size, debug):
+    candle_size_int = int(candle_size[:-1])
     if debug:
         logger.setLevel(logging.DEBUG)
 
@@ -94,18 +97,15 @@ def main(db_path, debug, candle_size='5m'):
             logging.info(f'{i}/{len(symbols)} | {symbol} | Processing from {pd.to_datetime(start_date, unit="ms", utc=True)}')
 
         while True:
-            # add 50000 minutes in ms to the start date.
-            # bitfinex is supposed to return 5000 datapoints but always returns fewer
+            # bitfinex is supposed to return 5000 datapoints but often returns fewer
             # probably due to not all bars having trades
-            # multiply by 10 to get max number of trades
             now = int(pd.Timestamp.utcnow().timestamp() * 1000)
             if start_date == 0:
                 end_date = now
             else:
-                end_date = start_date + 1000 * 5 * 60 * 1000 * 100
-            # only if not using get_earliest
-            # # bar size x limit (5k) x s to ms
-            # end_date = start_date + 5 * 5000 * 1000
+                # number of datapoints x candle size x s/min x ms/s x extra factor
+                end_date = start_date + 5000 * candle_size_int * 60 * 1000 * 100
+            
             # request won't work with an end date after the current time
             if end_date > now:
                 end_date = now
