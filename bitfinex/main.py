@@ -110,7 +110,9 @@ def main(db_path, debug, candle_size='5m'):
             if end_date > now:
                 end_date = now
 
-            logging.debug(f'{start_date} -> {end_date}')
+            fmt_start = pd.to_datetime(start_date, unit='ms', utc=True).strftime('%D %H:%M')
+            fmt_end = pd.to_datetime(end_date, unit='ms', utc=True).strftime('%D %H:%M')
+            logging.debug(f'{fmt_start} -> {fmt_end}')
             # returns (max) 5000 candles, one for each bar
             candles = get_candles(symbol, start_date, end_date, get_earliest=True, timeframe=candle_size)
             # import ipdb; ipdb.set_trace()
