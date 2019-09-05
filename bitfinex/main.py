@@ -138,7 +138,7 @@ def main(db_path, candle_size, debug):
 
 
             # prevent from api rate-limiting -- 60 per minute claimed, but seems to be a little slower
-            time.sleep(3)
+            time.sleep(1)
 
     db.close()
 
