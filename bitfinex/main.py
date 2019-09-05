@@ -55,7 +55,7 @@ def get_candles(symbol, start_date, end_date, timeframe='5m', limit=5000, get_ea
     """
     if get_earliest:
         url = f'{API_URL}/candles/trade:{timeframe}:t{symbol.upper()}/hist' \
-              f'?start=0&limit={limit}&sort=1'
+              f'?start={start_date}&end={end_date}&limit={limit}&sort=1'
         data = get_data(url)
         # reverse data
         data = data[::-1]
@@ -86,12 +86,10 @@ def main(db_path, debug, candle_size='5m'):
         latest_candle_date = db.get_latest_candle_date(symbol)
         if latest_candle_date is None:
             logging.debug('No previous entries in db. Starting from scratch')
-            get_earliest = True
             start_date = 0
             logging.info(f'{i}/{len(symbols)} | {symbol} | Processing from beginning')
         else:
             logging.debug('Found previous db entries. Resuming from latest')
-            get_earliest = False
             start_date = latest_candle_date
             logging.info(f'{i}/{len(symbols)} | {symbol} | Processing from {pd.to_datetime(start_date, unit="ms", utc=True)}')
 
@@ -100,19 +98,22 @@ def main(db_path, debug, candle_size='5m'):
             # bitfinex is supposed to return 5000 datapoints but always returns fewer
             # probably due to not all bars having trades
             # multiply by 10 to get max number of trades
-            end_date = start_date + 1000 * 5 * 60 * 1000 * 10
             now = int(pd.Timestamp.utcnow().timestamp() * 1000)
+            if start_date == 0:
+                end_date = now
+            else:
+                end_date = start_date + 1000 * 5 * 60 * 1000 * 100
+            # only if not using get_earliest
+            # # bar size x limit (5k) x s to ms
+            # end_date = start_date + 5 * 5000 * 1000
             # request won't work with an end date after the current time
             if end_date > now:
                 end_date = now
 
             logging.debug(f'{start_date} -> {end_date}')
-            # returns (max) 1000 candles, one for every minute
-            if get_earliest:
-                candles = get_candles(symbol, start_date, end_date, get_earliest=True, timeframe=candle_size)
-                get_earliest = False
-            else:
-                candles = get_candles(symbol, start_date, end_date, timeframe=candle_size)
+            # returns (max) 5000 candles, one for each bar
+            candles = get_candles(symbol, start_date, end_date, get_earliest=True, timeframe=candle_size)
+            # import ipdb; ipdb.set_trace()
 
             # df = pd.DataFrame(candles)
             # time_diffs = df[0].astype('int').diff().value_counts()
@@ -135,7 +136,7 @@ def main(db_path, debug, candle_size='5m'):
 
 
             # prevent from api rate-limiting -- 60 per minute claimed, but seems to be a little slower
-            time.sleep(2)
+            time.sleep(3)
 
     db.close()
 
