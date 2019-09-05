@@ -105,7 +105,7 @@ def main(db_path, candle_size, debug):
             else:
                 # number of datapoints x candle size x s/min x ms/s x extra factor
                 end_date = start_date + 5000 * candle_size_int * 60 * 1000 * 100
-            
+
             # request won't work with an end date after the current time
             if end_date > now:
                 end_date = now
@@ -114,7 +114,7 @@ def main(db_path, candle_size, debug):
             fmt_end = pd.to_datetime(end_date, unit='ms', utc=True).strftime('%D %H:%M')
             logging.debug(f'{fmt_start} -> {fmt_end}')
             # returns (max) 5000 candles, one for each bar
-            candles = get_candles(symbol, start_date, end_date, get_earliest=True, timeframe=candle_size)
+            candles = get_candles(symbol, start_date, end_date, get_earliest=True, candle_size=candle_size)
             # import ipdb; ipdb.set_trace()
 
             # df = pd.DataFrame(candles)
