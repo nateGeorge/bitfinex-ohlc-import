@@ -71,7 +71,7 @@ def get_candles(symbol, start_date, end_date, candle_size='5m', limit=5000, get_
 @click.argument('db_path', default='bitfinex.sqlite3',
                 type=click.Path(resolve_path=True))
 # candle size should be in minutes
-@click.argument('candle_size', default='5m')
+@click.option('--candle_size', default='5m')
 @click.option('--debug', is_flag=True, help='Set debug mode')
 def main(db_path, candle_size, debug):
     candle_size_int = int(candle_size[:-1])
