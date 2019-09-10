@@ -129,6 +129,7 @@ def main(db_path, candle_size, debug):
 
             if start_date == last_start_date:
                 logging.debug('Reached latest data, ending')
+                time.sleep(1)
                 break
 
             # seems like this modifies the original 'candles' to insert the ticker
