@@ -27,6 +27,10 @@ def load_data(pair='btcusd', candle_size='5m', get_timediffs=False, path="/home/
     df.loc[upsampled_idxs, 'high'] = df.loc[upsampled_idxs, 'close']
     df.loc[upsampled_idxs, 'low'] = df.loc[upsampled_idxs, 'close']
     df.drop(columns='new_time', inplace=True)
+    for c in df.columns[1:]:  # first column is symbol
+        df[c] = df[c].astype('float')
+
+    df.dropna(inplace=True)
 
     conn.close()
     return df
