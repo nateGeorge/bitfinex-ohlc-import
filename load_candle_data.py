@@ -32,6 +32,8 @@ def load_data(pair='btcusd', candle_size='5m', get_timediffs=False, path="/home/
 
     df.dropna(inplace=True)
 
+    df.drop(columns='symbol', inplace=True)
+
     conn.close()
     return df
 
