@@ -19,31 +19,17 @@ logger.setLevel(logging.INFO)
 API_URL = 'https://api.bitfinex.com/v2'
 
 
-def symbol_start_date(symbol):
-    """
-    Return the datetime when `symbol` first started trading.
-    """
-    with open('symbols_trading_start_days.json') as f:
-        data = json.load(f)
-
-    # objects are timestamps with milliseconds, divide
-    # by 1000 to remove milliseconds
-    return pendulum.from_timestamp(int(data[symbol])/1000)
-
-
 def get_symbols():
     """
     curl https://api-pub.bitfinex.com/v2/tickers?symbols=ALL
 
     Transforms from tBTCUSD to btcusd which is due to the original code in this repo.
     """
-    with open('symbols.json') as f:
-        return json.load(f)
     url = 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL'
     data = get_data(url)
     df = pd.DataFrame(data)
-    pair_df = df[df[0].str.contains('t\w\w\w\w\w\w')]
-    pair_df[0] = pair_df[0].apply(lambda x: x[1:].lower)
+    pair_df = df[df[0].str.contains('t\w\w\w\w\w\w')].copy()
+    pair_df[0] = pair_df[0].apply(lambda x: x[1:].lower())
     return pair_df[0].tolist()
 
 
