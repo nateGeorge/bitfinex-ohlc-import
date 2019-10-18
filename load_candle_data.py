@@ -38,6 +38,23 @@ def load_data(pair='btcusd', candle_size='5m', get_timediffs=False, path="/home/
     return df
 
 
+def resample_data(df, timeunit='1H'):
+    """
+    Resamples OHLCV data into OHLCV data with bars the size of timeunit.  
+    timeunit should be a pandas time unit string.
+    """
+    new_df = pd.DataFrame(
+                        {'open': df['open'].resample(timeunit).first(),
+                        'high': df['high'].resample(timeunit).max(),
+                        'low': df['low'].resample(timeunit).min(),
+                        'close': df['close'].resample(timeunit).last(),
+                        'volmue': df['volume'].resample(timeunit).sum()}
+                        )
+    
+    return new_df
+
+
+
 def check_for_gaps(df, unit='T'):
     """
     Checks to see if any gaps in the data using units.  T is minutes.
