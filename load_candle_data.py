@@ -48,7 +48,7 @@ def resample_data(df, timeunit='1H'):
                         'high': df['high'].resample(timeunit).max(),
                         'low': df['low'].resample(timeunit).min(),
                         'close': df['close'].resample(timeunit).last(),
-                        'volmue': df['volume'].resample(timeunit).sum()}
+                        'volume': df['volume'].resample(timeunit).sum()}
                         )
     
     return new_df
