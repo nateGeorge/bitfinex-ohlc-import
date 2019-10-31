@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import time
@@ -33,7 +34,6 @@ def get_symbols():
     return pair_df[0].tolist()
 
 
-
 def get_candles(symbol, start_date, end_date, candle_size='5m', limit=5000, get_earliest=False):
     """
     Return symbol candles between two dates.
@@ -54,24 +54,28 @@ def get_candles(symbol, start_date, end_date, candle_size='5m', limit=5000, get_
 
 
 @click.command()
-@click.argument('db_path', default='bitfinex.sqlite3',
+@click.argument('db_path', default='~/.bitfinex_data/bitfinex.sqlite3',
                 type=click.Path(resolve_path=True))
 # candle size should be in minutes
-@click.option('--candle_size', default='5m')
+@click.option('--candle_size', default='1m')
 @click.option('--debug', is_flag=True, help='Set debug mode')
 def main(db_path, candle_size, debug):
     candle_size_int = int(candle_size[:-1])
     if debug:
         logger.setLevel(logging.DEBUG)
 
-    db = SqliteDatabase(path=db_path, candle_size=candle_size)
+    db_dir = os.path.split(os.path.expanduser(db_path))[0]
 
+    # TODO: make sure each dir on the way is created
+    if not os.path.exists(db_dir):
+        os.mkdir(db_dir)
+
+    db = SqliteDatabase(path=db_path, candle_size=candle_size)
     symbols = get_symbols()
     logging.info(f'Found {len(symbols)} symbols')
     for i, symbol in enumerate(symbols, 1):
         # get start date for symbol
-        # this is either the last entry from the db
-        # or the trading start date (from json file)
+        # this is either the last entry from the db or None
         latest_candle_date = db.get_latest_candle_date(symbol)
         if latest_candle_date is None:
             logging.debug('No previous entries in db. Starting from scratch')
@@ -112,17 +116,14 @@ def main(db_path, candle_size, debug):
             # end when we don't see any new data
             last_start_date = start_date
             start_date = candles[0][0]
-
             if start_date == last_start_date:
                 logging.debug('Reached latest data, ending')
                 time.sleep(1)
                 break
 
-            # seems like this modifies the original 'candles' to insert the ticker
             logging.debug(f'Fetched {len(candles)} candles')
             if candles:
                 db.insert_candles(symbol, candles)
-
 
             # prevent from api rate-limiting -- 60 per minute claimed, but seems to be a little slower
             time.sleep(1)
