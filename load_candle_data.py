@@ -4,8 +4,8 @@ import os
 import pandas as pd
 import sqlite3
 
-def load_data(pair='btcusd', candle_size='5m', get_timediffs=False, path="/home/nate/github/bitfinex_ohlc_import/", filename="bitfinex.sqlite3"):
-    conn = sqlite3.connect(os.path.join(path, filename))
+def load_data(pair='btcusd', candle_size='5m', get_timediffs=False, path='~/.bitfinex_data/bitfinex.sqlite3'):
+    conn = sqlite3.connect(os.path.expanduser(path))
     df = pd.read_sql_query("select * from candles_{} where symbol='{}';".format(candle_size, pair), conn)
     df['time'] = pd.to_datetime(df['time'], unit='ms', utc=True)
 
