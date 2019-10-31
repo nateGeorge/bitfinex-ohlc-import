@@ -54,8 +54,7 @@ def get_candles(symbol, start_date, end_date, candle_size='5m', limit=5000, get_
 
 
 @click.command()
-@click.argument('db_path', default='~/.bitfinex_data/bitfinex.sqlite3',
-                type=click.Path(resolve_path=True))
+@click.argument('db_path', default='~/.bitfinex_data/bitfinex.sqlite3')
 # candle size should be in minutes
 @click.option('--candle_size', default='1m')
 @click.option('--debug', is_flag=True, help='Set debug mode')
@@ -64,13 +63,15 @@ def main(db_path, candle_size, debug):
     if debug:
         logger.setLevel(logging.DEBUG)
 
+    print(db_path)
     db_dir = os.path.split(os.path.expanduser(db_path))[0]
+    print(db_dir)
 
     # TODO: make sure each dir on the way is created
     if not os.path.exists(db_dir):
         os.mkdir(db_dir)
 
-    db = SqliteDatabase(path=db_path, candle_size=candle_size)
+    db = SqliteDatabase(path=os.path.expanduser(db_path), candle_size=candle_size)
     symbols = get_symbols()
     logging.info(f'Found {len(symbols)} symbols')
     for i, symbol in enumerate(symbols, 1):
