@@ -129,7 +129,7 @@ def main(db_path, candle_size, debug):
 
             if start_date == last_start_date:
                 logging.debug('Reached latest data, ending')
-                time.sleep(1)
+                time.sleep(1.1)
                 break
 
             # seems like this modifies the original 'candles' to insert the ticker
@@ -139,7 +139,7 @@ def main(db_path, candle_size, debug):
 
 
             # prevent from api rate-limiting -- 60 per minute claimed, but seems to be a little slower
-            time.sleep(1)
+            time.sleep(1.1)
 
     db.close()
 
