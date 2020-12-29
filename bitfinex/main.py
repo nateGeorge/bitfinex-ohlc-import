@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import time
@@ -19,33 +20,18 @@ logger.setLevel(logging.INFO)
 API_URL = 'https://api.bitfinex.com/v2'
 
 
-def symbol_start_date(symbol):
-    """
-    Return the datetime when `symbol` first started trading.
-    """
-    with open('symbols_trading_start_days.json') as f:
-        data = json.load(f)
-
-    # objects are timestamps with milliseconds, divide
-    # by 1000 to remove milliseconds
-    return pendulum.from_timestamp(int(data[symbol])/1000)
-
-
 def get_symbols():
     """
     curl https://api-pub.bitfinex.com/v2/tickers?symbols=ALL
 
     Transforms from tBTCUSD to btcusd which is due to the original code in this repo.
     """
-    with open('symbols.json') as f:
-        return json.load(f)
     url = 'https://api-pub.bitfinex.com/v2/tickers?symbols=ALL'
     data = get_data(url)
     df = pd.DataFrame(data)
-    pair_df = df[df[0].str.contains('t\w\w\w\w\w\w')]
-    pair_df[0] = pair_df[0].apply(lambda x: x[1:].lower)
+    pair_df = df[df[0].str.contains('t\w\w\w\w\w\w')].copy()
+    pair_df[0] = pair_df[0].apply(lambda x: x[1:].lower())
     return pair_df[0].tolist()
-
 
 
 def get_candles(symbol, start_date, end_date, candle_size='5m', limit=5000, get_earliest=False):
@@ -68,24 +54,29 @@ def get_candles(symbol, start_date, end_date, candle_size='5m', limit=5000, get_
 
 
 @click.command()
-@click.argument('db_path', default='bitfinex.sqlite3',
-                type=click.Path(resolve_path=True))
+@click.argument('db_path', default='~/.bitfinex_data/bitfinex.sqlite3')
 # candle size should be in minutes
-@click.option('--candle_size', default='5m')
+@click.option('--candle_size', default='1m')
 @click.option('--debug', is_flag=True, help='Set debug mode')
 def main(db_path, candle_size, debug):
     candle_size_int = int(candle_size[:-1])
     if debug:
         logger.setLevel(logging.DEBUG)
 
-    db = SqliteDatabase(path=db_path, candle_size=candle_size)
+    print(db_path)
+    db_dir = os.path.split(os.path.expanduser(db_path))[0]
+    print(db_dir)
 
+    # TODO: make sure each dir on the way is created
+    if not os.path.exists(db_dir):
+        os.mkdir(db_dir)
+
+    db = SqliteDatabase(path=os.path.expanduser(db_path), candle_size=candle_size)
     symbols = get_symbols()
     logging.info(f'Found {len(symbols)} symbols')
     for i, symbol in enumerate(symbols, 1):
         # get start date for symbol
-        # this is either the last entry from the db
-        # or the trading start date (from json file)
+        # this is either the last entry from the db or None
         latest_candle_date = db.get_latest_candle_date(symbol)
         if latest_candle_date is None:
             logging.debug('No previous entries in db. Starting from scratch')
@@ -126,17 +117,14 @@ def main(db_path, candle_size, debug):
             # end when we don't see any new data
             last_start_date = start_date
             start_date = candles[0][0]
-
             if start_date == last_start_date:
                 logging.debug('Reached latest data, ending')
                 time.sleep(1.1)
                 break
 
-            # seems like this modifies the original 'candles' to insert the ticker
             logging.debug(f'Fetched {len(candles)} candles')
             if candles:
                 db.insert_candles(symbol, candles)
-
 
             # prevent from api rate-limiting -- 60 per minute claimed, but seems to be a little slower
             time.sleep(1.1)

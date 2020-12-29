@@ -1,14 +1,21 @@
 ## bitfinex-ohlc-import
 
+### Quickstart
+
+`pipenv run python bitfinex/main.py --debug --candle_size=1m`
+
+Candle sizes can currently be 1m or 5m for one and five minute bars.
+
+
 A script that imports all historical OHLC data from the Bitfinex API and stores it in a local database.
 
 The data has a 1-minute interval and can be used to carry out further in-depth analysis of market trends or backtest trading bots.
 
-All currently traded symbols (e.g. BTC-USD, ETH-USD, ...) are supported (check `symbols.json` for a list of them). The import will begin from the earliest trading date (defined in `symbols_trading_start_days.json`). The script can be invoked periodically (for example with a cronjob) to fetch the latest data. It will automatically resume from the latest saved date.
+All possible symbols on bitfinex are gathered at the time of scraping based on their API. The import begins from the earliest possible trading date. The script can be invoked periodically (for example with a cronjob) to fetch the latest data. It automatically resumes from the latest saved date.
 
-API rate limits are respected and will not be exceeded. The script will re-try fetching with an incremental backoff time and continue to the next symbol after 3 failed attempts.
+API rate limits are respected and will not be exceeded. The script retries fetching with an incremental backoff time, and continues to the next symbol after 3 failed attempts.
 
-Experimental support for the Websocket API is also available. It currently subscribes to all trading updates (buy/sell) but does not store that data.
+
 
 ## Installation
 

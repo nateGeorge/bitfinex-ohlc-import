@@ -4,8 +4,8 @@ import os
 import pandas as pd
 import sqlite3
 
-def load_data(pair='btcusd', candle_size='5m', get_timediffs=False, path="/home/nate/github/bitfinex_ohlc_import/", filename="bitfinex.sqlite3"):
-    conn = sqlite3.connect(os.path.join(path, filename))
+def load_data(pair='btcusd', candle_size='5m', get_timediffs=False, path='~/.bitfinex_data/bitfinex.sqlite3'):
+    conn = sqlite3.connect(os.path.expanduser(path))
     df = pd.read_sql_query("select * from candles_{} where symbol='{}';".format(candle_size, pair), conn)
     df['time'] = pd.to_datetime(df['time'], unit='ms', utc=True)
 
@@ -36,6 +36,23 @@ def load_data(pair='btcusd', candle_size='5m', get_timediffs=False, path="/home/
 
     conn.close()
     return df
+
+
+def resample_data(df, timeunit='1H'):
+    """
+    Resamples OHLCV data into OHLCV data with bars the size of timeunit.  
+    timeunit should be a pandas time unit string.
+    """
+    new_df = pd.DataFrame(
+                        {'open': df['open'].resample(timeunit).first(),
+                        'high': df['high'].resample(timeunit).max(),
+                        'low': df['low'].resample(timeunit).min(),
+                        'close': df['close'].resample(timeunit).last(),
+                        'volume': df['volume'].resample(timeunit).sum()}
+                        )
+    
+    return new_df
+
 
 
 def check_for_gaps(df, unit='T'):
